@@ -1,0 +1,662 @@
+---
+title: "Week 10 Final Project"
+output: word_document
+---
+
+**Assignment: 10.1 Final Project**  
+**Name:  Peterson, Jeff**  
+**Date:  `r format(Sys.Date(), "%Y-%B-%d")`**  
+---
+
+##Section 1
+
+* **Introduction:**
+    * Do you believe in UFOs?  Well you are not alone.  Many studies indicate that anywhere between one-third to nearly one-half of all American’s believe in UFOs.  So let’s look at some data and see how UFO sightings are trending both in the U.S. and around the world.
+* **Research questions:**
+    * What areas of the country/world are hotspots for UFO sightings?
+    * Are there any discernible time of day trends in UFO sightings?
+    * Do sightings trend with the seasons, or holidays?
+    * Are the number of UFO sightings in the U.S. increasing?
+    * Are there more sightings in the U.S than in other countries?
+    * What are the most common UFO descriptions?
+* **Approach:**
+    * My approach is based on looking at general UFO sighting trends in order to pick out certain patterns.  Once these patterns are identified, I would like to see if any type of prediction models can be developed.
+* **How your approach addresses (fully or partially) the problem:**
+    * I will select a particular hotspot of UFO sightings to apply a prediction model.  I would like to see if the model can predict the frequency of future sightings.
+* **Data:**
+    * The data were obtained from Kaggle and scraped, geolocated, and time standardized from the National UFO Reporting Center data.
+    * https://www.kaggle.com/NUFORC/ufo-sightings
+    * The data has 88,875 rows and 11 columns.  Each row represents a reported sighting from 1906-2014.
+    * I will disregard the following column:
+        * Duration(hours/min): this column is not needed because there is an additional duration column that is listed in seconds and this is the one I will use for any analysis.
+    * I will also look for outliers in the data variables that I will be using.  If I end up identifying outliers, a justification will be provided for their inclusion/exclusion.
+* **Required packages:**
+    * ggplot2: used for plotting
+    * gridExtra: used for plotting
+    * tidyverse: for cluster analysis
+    * ggmap: used for plotting
+    * stringr: used for working with strings
+    * lubridate: used for working with dates
+    * dplyr: used for working with data frames
+    * ggmisc: used for linear model
+    * forcats: used for ordering of plot variables
+    * maps: used for plotting
+    * mapdata: used for plotting
+    * useful: used for cluster analysis
+    * factoextra: used for plotting
+* **Plots and table needs:**
+    * Histograms to determine outliers and general data spread
+    * Scatter plots to identify potential correlations
+    * Tables of statistical parameters as needed
+    * Maps that provide graphical descriptions of sighting locations
+* **Questions for future steps:**
+    * Will a random forest learning algorithm improve my prediction?
+    * What about a decision tree model?
+    * How does one place data on maps within r?
+
+
+
+##Section 2  
+
+**Data importing and cleaning**  
+I imported the data into R and looked over the variables.  
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(lubridate)
+complete <- read.csv("~/School/Classes/DSC 520/Final Project/Final Project/Data Sources/complete_cleaned.csv", stringsAsFactors = FALSE)
+complete_cleaned <- complete
+```  
+```{r warning=FALSE, message=FALSE, comment=""}
+str(complete_cleaned)
+```  
+
+I am going to keep all of the variables except the duration..hours.min.  I will not use this column because there is another variable (duration..seconds) that I will use instead. 
+
+```{r warning=FALSE, message=FALSE, comment=""}
+complete_cleaned$duration..hours.min. <- NULL
+```  
+
+The next step is to set each column to its proper class. 
+
+```{r warning=FALSE, message=FALSE, comment=""}
+complete_cleaned$datetime <- mdy_hm(complete_cleaned$datetime)
+complete_cleaned$date.posted <- mdy(complete_cleaned$date.posted)
+complete_cleaned$latitude <- as.numeric(as.character(complete_cleaned$latitude))
+complete_cleaned$longitude <- as.numeric(as.character(complete_cleaned$longitude))
+complete_cleaned$duration..seconds. <- as.numeric(as.character(complete_cleaned$duration..seconds.))
+str(complete_cleaned)
+```  
+
+The next step was to remove the NA values.
+
+```{r warning=FALSE, message=FALSE, comment=""}
+complete_cleaned <- na.omit(complete_cleaned)
+```  
+
+Now it was time to look at the data itself.  It turns out that there are a lot of missing values.  This was going to make any kind of analysis difficult.  My intent was not to "correct" every entry because I don't have access to the raw data.  However, I could update the missing country entries based on the city that was listed.  This was an extremely time consuming process because there were thousands (~ 13,000) of missing entries.  I would have liked to have used R to assist with this task, but I had no idea how to even begin a text-based search and replace task.  So I did this step within Excel.  Most of the missing country entries were easy to fill in based on their corresponding city.  If I wasn't sure what the country should be, or if it was also missing a city entry, I would label it as either "other" or "not listed".  I will perform other data cleaning activities later on during individual analysis stages.  I will address each of these individually when performed.  
+
+I also had to correct a lot of the latitude and longitude values.   Once I started making plots onto a map (U.S. only), I quickly realized that some of them were incorrect.  I ended up going through each one and correcting the entries.  Most of the errors were incorrect country designations.  For example, an entry would list the U.S. as its country but once you see it on the map, the data is nowhere near the U.S.  
+
+Here is the end result of the data frame:  
+
+```{r, comment=""}
+head(complete_cleaned)
+```  
+```{r echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+library(lemon)
+knit_print.data.frame <- lemon_print
+```
+
+
+```{r caption="Sample of Cleaned Data Set", render=lemon_print}
+head(complete_cleaned)
+```  
+ 
+
+**Questions for future steps**  
+After spending quite a bit of time with this data, I realized there are a lot of things I need to learn in order to perform the analysis that I want.
+
+* Subsetting:  I want to be able to analyze the data in geographical groups.  I will need to figure out how to properly subset the data based on country.  
+* Time: I have struggled plotting time-based data in the past, so I will need to brush up on this.  
+* Histograms: I started making some histograms of the data and I need to find how to put the values in descending order.  
+* Maps:  I would like to be able to show the UFO sighting locations on a map.  I will need to learn how to do this.  
+
+**What information is not self-evident**  
+The biggest issue here is the inherent nature of the data.  When people would enter their information into the database, there was no pre-defined structure that they were to adhere to.  Because of this "free-text" format, I have a lot of data that doesn't really fit with the overall data structures.  Therefore, I'm not sure at this point how I will have to deal with that.  
+
+I'm also not sure how to handle the huge disparities in duration..seconds.  The values range from 0.0 to 97,836,000!  That last number is 31-years.  I'm guessing that this individual was abducted.  
+
+**What are different ways you could look at the data?**  
+There are many different ways I plan on looking at this UFO data.  I would like to break it down by region.  So there will be a U.S. analysis as well as an "everywhere else" analysis.  The U.S. analysis will also be broken down by individual states.  I am interested in knowing where the sighting "hot spots" are located.  I am also interested in when sightings occurred and if I can pick out any particular patterns/behavior.  I also plan on looking at correlations between variables.  For example, is there any correlation between UFO sightings and U.S. states?  
+
+**How do you plan to slice and dice the data?**  
+I am planning on coming up with the following data subsets:
+
+* subsetUS: This will contain only U.S. state locations.  
+* subsetCountry: This will contain all countries besides the U.S.  
+* subsetOther: This will contain locations that did not list a specific country but had a location description in the city column.  An example of such an entry is: "pacific ocean (1500mi.sw of u.s.mainland)".  
+* subsetNL: This will contain data that does not have a country or city description.  This will be designated as "not listed".  
+* city_counts: This will contain sightings for U.S. cities.  
+* state_counts: This will contain sightings for U.S. states.  
+* I also anticipate having to create a subset/data frame containing only geographical locations for plotting on a map.  
+* I will also have to derive a new column based on the time difference between the time a sighting was observed and when it was reported.  I may also look into determining the time gap between these two events.  
+* I will also be using filters to limit the number of data that are shown at certain times.  For example, I will likely generate a bar plot of sightings by country.  There are over 100 separate countries, so I will use a filter to show just the top 15 or so.  
+* subsetContUS: I ended up having to make this subset so that I could just limit the graphical plot to the continental U.S.  In other words, I removed Hawaii and Alaska from the subsetUS group.  I also detected some outlier data points.  These points were incorrectly categorized as belonging to the U.S., but when plotted out they were clearly not part of that subset. 
+
+**How could you summarize your data to answer key questions**  
+The main way I plan to summarize the data is to provide specific plots that are based on the subsets described above.  These will be used to answer the following key questions:
+  
+* What areas of the country/world are hotspots for UFO sightings?  
+    * These will be shown graphically on a map.
+* Are there any discernible trends in UFO sightings?  
+    * These will be shown as time-series plots.  
+* Do sightings trend with seasons, days of the week, or holidays?  
+    * These will also be shown with time-series plots.  
+* Are the number of UFO sightings increasing?  
+    * These will be a time-series based on locations.  
+* Are there more sightings in the U.S than in other countries?  
+    * A bar plot will be used to summarize these data.  
+* What are the most common UFO descriptions?  
+    * A bar chart and narrative summary will describe this trend.  
+    
+**What types of plots and tables will help you to illustrate the findings to your questions?**  
+I will be using the following plot types from the ggplot library:
+
+* geom_bar: This will be used for all of the plots meant to illustrate total UFO sightings by area.  For example, number of UFO sightings per U.S. state.  
+* geom_point: This will be used for all of the correlation (scatter) plots.  For example, the correlation between date of UFO sighting and the U.S. state in which it occurred.  The goal here is to see if some states are seeing an increase or decrease in sightings as a function of time.  I will likely use the "jitter" option to help clarify overlapping data points.  I will also use this plot type for my cluster analysis.    
+* geom_line: This will be used for time-series plots.  For example, showing the number of UFO sightings as a function of years.  
+* geom_map: This method will be used for showing UFO sighting location on a map.  
+
+**Do you plan on incorporating any machine learning techniques to answer your research questions? Explain.**  
+I am planning on conducting a cluster analysis based on UFO sighting location.  This will hopefully provide a better understanding of where "hot spots" are as opposed to just looking at the map and guessing.  I am hoping to use cluster analysis to show that there are centroid locations that are clustered near government/military facilities.  This would help explain that high sightings in these areas might not be due to UFOs, but military aircraft.  This should prove interesting.  
+
+**Questions for future steps**  
+One question I would like to better answer is the number of UFO sightings per city.  Unfortunately, the city data contains many empty cells.  If I had time, I would go back and see if I can further populate this column.  
+
+Another question I would like to be able to answer is to determine the number of UFO sightings based on population densities.  For example, I already know that California has the most sightings in the U.S., but it is also the most populous.  In order to do this type of calculation, I would have to go find the current population totals for each of the states.  Something that would indeed be interesting, but I just don't have the time to do this right now.
+
+
+
+##Section 3
+
+**Introduction**  
+Do you believe in aliens?  Well if you do, you are not alone (pun intended).  Many studies indicate that anywhere between one-third to nearly one-half of all American's believe in UFOs.  So let's look at some data and see how UFO sightings are trending both in the U.S. and around the world.  
+
+The data were obtained from Kaggle and scraped, geolocated, and time standardized from the National UFO Reporting Center data.
+https://www.kaggle.com/NUFORC/ufo-sightings  
+
+**The problem statement I addressed**  
+There are many questions I hope to address with this analysis:
+
+* What areas of the country/world are hotspots for UFO sightings?  
+* Are there any discernible time of day trends in UFO sightings?  
+* Do sightings trend with the seasons, or holidays?  
+* Are the number of UFO sightings in the U.S. increasing?  
+* Are there more sightings in the U.S than in other countries?  
+* What are the most common UFO descriptions?  
+
+**How was this problem statement addressed**  
+I conducted multiple steps during my analysis in order to find answers to the above questions.  These are the steps I took:
+
+1. I downloaded the data set from Kaggle and loaded it into R  
+2. I cleaned the data by setting proper column classes, removing NA values, updating correct state/country locations, correcting erroneous latitude/longitude coordinates, and by removing an unneeded column.  
+3. I then conducted an exploratory data analysis to determine what subgroups and/or filters I might need to use.  
+4. I made plots that would provide answers to the questions above as well as plots that I just found interesting.  
+5. I made conclusions based on the plot data.  
+
+**Analysis**  
+Here are the first two exploratory plots that I generated.  
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=7, fig.height=5}
+library(ggplot2)
+library(gridExtra)
+library(tidyverse)
+library(ggmap)
+library(stringr)
+library(lubridate)
+library(dplyr)
+library(ggpmisc)
+library(forcats)
+library(ggmap)
+library(maps)
+library(mapdata)
+library(useful)
+library(factoextra)
+
+complete_cleaned <- read.csv("~/School/Classes/DSC 520/Final Project/Final Project/Data Sources/complete_cleaned.csv", stringsAsFactors=FALSE)
+plot1 <- ggplot(complete_cleaned, aes(x=country)) + geom_bar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    xlab("Country") + ylab("Number of Sightings") + ggtitle("UFO Sightings by Country") +
+    theme(plot.title = element_text(hjust = 0.5))
+plot2 <- ggplot(complete_cleaned, aes(x=state)) + geom_bar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    xlab("State") + ylab("Number of Sightings") + ggtitle("UFO Sightings by U.S. State") +
+    theme(plot.title = element_text(hjust = 0.5))
+grid.arrange(plot1, plot2, nrow = 1)
+```  
+
+These plots made me quickly realize that I needed to subset my data.  There are way too many countries listed and they are dominated by the huge U.S. peak.  So I made the following subsets of data so that I would have a better picture of what is occurring:
+
+Subset Name | Description  
+----------- | -----------  
+subsetUS | Contains only locations within the United States  
+subsetOther | Contains locations that did not have a discernible location description (e.g. over pacific ocean)  
+subsetNL | Contains locations that had a blank description  
+subsetCountry | Contains locations outside of the United States  
+
+Now let's plot this data again:  
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=7, fig.height=5}
+subsetUS <- subset(complete_cleaned, country == "us")
+subsetOther <- subset(complete_cleaned, country == "other")
+subsetNL <- subset(complete_cleaned, country == "not listed")
+subsetCountry <- subset(complete_cleaned, country != "us" & country != "other" & country != "not listed")
+#Put columns in proper classes
+subsetUS$datetime <- as.POSIXct(subsetUS$datetime, format = "%m/%d/%Y %H:%M")
+subsetOther$datetime <- as.POSIXct(subsetOther$datetime, format = "%m/%d/%Y %H:%M")
+subsetNL$datetime <- as.POSIXct(subsetNL$datetime, format = "%m/%d/%Y %H:%M")
+subsetCountry$datetime <- as.POSIXct(subsetCountry$datetime, format = "%m/%d/%Y %H:%M")
+
+plot3 <- ggplot(subsetCountry, aes(x=country)) + geom_bar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    xlab("Country") + ylab("Number of Sightings") + ggtitle("UFO Sightings by Country") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+plot4 <- ggplot(subsetUS, aes(x=state)) + geom_bar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    xlab("State") + ylab("Number of Sightings") + ggtitle("UFO Sightings by U.S. State") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(plot3, plot4, nrow = 1)
+```  
+
+These plots greatly improved the resolution by using the subset data.  While these plots are much better, I am going to do some adjusting of the plots so that we can really start to make some conclusions.  Also, since most of the sightings occur in the United States, I am going to focus my analysis primarily on this region.  One possible reason for the United States having the most sightings is that the National UFO Reporting Center (NUFORC) is located in the U.S.  Therefore, it is conceivable that mostly American people would be aware that they could report a UFO sighting.  
+
+I employed a filter to just plot the states that had greater than 100 UFO sightings.  
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+state_counts <- subsetUS %>% 
+    filter(city != "") %>% 
+    count(state, sort = TRUE) %>% 
+    unite("location", -n, sep = "")
+city_counts <- subsetUS %>% 
+    filter(state != "") %>% 
+    count(city, state, sort = TRUE) %>% 
+    unite("location", -n, sep = ",")
+shape_counts <- subsetUS %>% 
+    filter(!shape %in% c("", "unknown", "other")) %>% 
+    count(shape, sort = TRUE) %>% 
+    unite("location", -n, sep = ",")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=7, fig.height=5}
+#Plot of states
+filter(state_counts, n > 100) %>% 
+    mutate(x = factor(location)) %>% 
+    ggplot(aes(x=reorder(location, -n), y=n)) +
+    geom_bar(stat = "identity") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    xlab("State") + ylab("Number of Sightings") + ggtitle("States with over 100 UFO Sightings") +
+    theme(plot.title = element_text(hjust = 0.5))
+```  
+
+A similar filtering script was used to plot out the U.S. cities that had more than 100 UFO sightings.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=7, fig.height=5}
+filter(city_counts, n > 100) %>% 
+    mutate(x = factor(location)) %>% 
+    ggplot(aes(x=reorder(location, -n), y=n)) +
+    geom_bar(stat = "identity") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    xlab("City") + ylab("Number of Sightings") + ggtitle("Cities with over 100 UFO Sightings") +
+    theme(plot.title = element_text(hjust = 0.5))
+```  
+
+Some interesting facts obtained from these two plots.  Most UFO sightings within the United States occur in California.  In fact, California has over two-times as many sightings as the next state, Washington.  Another interesting note is that the top five (California, Washington, Florida, Texas, and New York) states all have a coastline.
+
+Even though California has the most sightings, Seattle, WA has the most sightings for a particular city.  Again, Seattle is a coastal city.  That fact seems to be a significant detail.  One theory I have as to why Seattle has so many reported sightings is that Boeing has a huge aircraft manufacturing and testing facility in Seattle.  Perhaps some of these UFOs are actually Boeing aircraft.  
+
+Finally, the top six cities for UFO sightings are in the western part of the United States.
+
+Now let's take a look at how UFO sightings are a function of time.  I was first interested to see if sightings are increasing over time.  Here is a plot of UFO sightings versus time.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+subsetUS <- subsetUS %>% 
+    mutate(day = day(datetime),
+           month = month(datetime),
+           year = year(datetime),
+           hour = hour(datetime))
+plot5 <- subsetUS %>% 
+    mutate(datetime = floor_date(datetime, unit = "1 year")) %>% 
+    group_by(datetime) %>% 
+    summarize(cts = n()) %>% 
+    ggplot(aes(datetime, cts)) +
+    geom_line(size = 1) +
+    scale_x_datetime(date_breaks = "10 years", date_labels = "%Y") +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
+    xlab("Date") + ylab("Number of Sightings") + ggtitle("U.S. UFO Sightings Since 1906") +
+    theme(plot.title = element_text(hjust = 0.5))
+plot5
+```  
+
+This plot is very surprising in the fact that there is such a sharp decrease just prior to 2014.  Prior to that time, sightings were steadily on the rise.  In order to really predict if UFO sightings are increasing, I am going to fit a model to the data.  While the data are showing an "exponential" type of growth (up until 2014), that doesn't seem like an appropriate model for describing this kind of data.  I am going to try a linear model.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+my.formula <- y ~ x
+plot5 + geom_smooth(method = "lm", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..rr.label.., sep = "~~~")), 
+                 parse = TRUE)
+```
+
+As you can see, the model does not fit the data well and has a small $R^2$ value of 0.48.  Again, while the fit is poor, the overall trend is increasing.  I looked more closely at the data, and it looks like it is only recorded through May of 2014.  I'm guessing that is the date the data were pulled.  Also, we could improve our model if we just look at the past 25 years of sightings.  You will notice in the plot that up until about 1989, the sightings remained relatively flat.  So for my improved model, I am only going to look at the data between 1989 and 2013. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+#Plotting from 1989
+subsetYear <- subset(subsetUS, year >= "1989")
+subsetYear <- subset(subsetYear, year <= "2013")
+sightingsPlotYear <- subsetYear %>% 
+    mutate(datetime = floor_date(datetime, unit = "1 year")) %>% 
+    group_by(datetime) %>% 
+    summarize(cts = n()) %>% 
+    ggplot(aes(datetime, cts)) +
+    geom_line(size = 1) +
+    scale_x_datetime(date_breaks = "5 years", date_labels = "%Y") +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
+    xlab("Date") + ylab("Number of Sightings") + ggtitle("U.S. UFO Sightings from 1989 - 2013") +
+    theme(plot.title = element_text(hjust = 0.5))
+sightingsPlotYear
+
+#Fitting a linear model to the data
+my.formula <- y ~ x
+sightingsPlotYear + geom_smooth(method = "lm", formula = my.formula) +
+    stat_poly_eq(formula = my.formula, 
+                 aes(label = paste(..rr.label.., sep = "~~~")), 
+                 parse = TRUE)
+```
+
+This plot gives us a much better fit with an $R^2 = 0.93$.  This will allow us to better use this model for future UFO sighting predictions.  If we look at the summary statistics for this model, we obtain:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+a <- c(1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013)
+b <- c(236,232,217,232,281,397,1284,823,1216,1710,2747,2605,2897,2899,3470,3813,3730,3397,4022,4600,4209,4125,5044,7187,6893)
+regression <- lm(b~a)
+summary(regression)
+```  
+
+An interpretation of the $R^2=0.93$ means that the sighting date accounts for 93% of the variation in UFO sightings for that year.  The $adjusted R^2$ gives us some idea of how our model generalizes outside our current data range.  Since these values are nearly identical, we can say that our model generalizes well with dates outside our current range.  In other words, the cross validity of our model is very good.  Because of this, we can use our model to predict the number of UFO sightings for future years.  Here is a table of predicted sightings:
+
+Year | Predicted U.S. UFO Sightings    
+---- | ----------------------  
+2014 | `r -532835.47 + 267.65*2014` 
+2015 | `r -532835.47 + 267.65*2015`  
+2016 | `r -532835.47 + 267.65*2016`  
+2017 | `r -532835.47 + 267.65*2017`
+2018 | `r -532835.47 + 267.65*2018`  
+2019 | `r -532835.47 + 267.65*2019`  
+
+```{r eval=FALSE, echo=FALSE}
+library(QuantPsyc)
+library(lmtest)
+library(regclass)
+library(car)
+
+subsetContUSID$datetime <- as.POSIXct(subsetContUSID$datetime, format = "%m/%d/%Y %H:%M")
+
+lmYear <- lm(year ~ stateID + month + day, data = subsetContUSID)
+summary(lmYear)
+lm.beta(lmYear)
+
+lmYear2 <- lm(year ~ stateID + latitude + longitude, data = subsetContUSID)
+summary(lmYear2)
+
+#Model to predict state for UFO sighting given Year, Month, and Day
+lmYear3 <- lm(stateID ~ year + day + month, data = subsetContUSID)
+summary(lmYear3)
+
+#Model diagnostics
+subsetContUSID$residuals <- resid(lmYear3)
+subsetContUSID$standardized.residuals <- rstandard(lmYear3)
+subsetContUSID$studentized.residuals <- rstudent(lmYear3)
+subsetContUSID$cooks.distance <- cooks.distance(lmYear3)
+subsetContUSID$dfbeta <- dfbeta(lmYear3)
+subsetContUSID$dffit <- dffits(lmYear3)
+subsetContUSID$leverage <- hatvalues(lmYear3)
+subsetContUSID$covariance.ratios <- covratio(lmYear3)
+
+#Save the data
+write.table(subsetContUSID, "Model Diagnostics.dat", sep = "\t", row.names = FALSE)
+
+#Standardized residuals
+subsetContUSID$standardized.residuals > 2 | subsetContUSID$standardized.residuals < -2
+subsetContUSID$large.residual <- subsetContUSID$standardized.residuals > 2 | subsetContUSID$standardized.residuals < -2
+sum(subsetContUSID$large.residual)
+
+#Durbin-Watson test
+dwtest(lmYear3)
+#The value is really, really low and should be cuase for concern
+
+#Multicollinearity
+vif(lmYear3) #Variance Inflation Factor
+1/vif(lmYear3) #Tolerance
+mean(vif(lmYear3))
+#The regression is not biased
+#There is no collinearity within the data
+
+#Plots
+plot(lmYear3)
+hist(subsetContUSID$studentized.residuals) #Non-normal
+```
+
+
+Continuing to look at the time-series data, I was interested to see if there are any trends to UFO sightings as a function of time of year and time of day.  Here are the plots that will help answer these questions.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=7, fig.height=5}
+subsetUS <- subsetUS %>% 
+    mutate(day = day(datetime),
+           month = month(datetime),
+           year = year(datetime),
+           hour = hour(datetime))
+
+subsetUS %>% 
+    mutate(month = factor(month),
+           day = factor(day)) %>% 
+    filter(between(year, 1989, 2013)) %>% 
+    group_by(year, month) %>% 
+    summarize(cts = n()) %>% 
+    ggplot(aes(month, cts, group = year)) +
+    geom_line() + ylab("Number of Sightings") +
+    facet_wrap(~ year, ncol = 5, scales = "free_y") +
+    labs(title = "Are UFO Sightings in the U.S. Seasonal?") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    xlim("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12") +
+    scale_x_discrete(name ="Month", 
+                     limits=c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"),
+                     labels=c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"))
+```  
+
+The plots go back 25 years and I purposely left the y-axis at different scale levels so that absolute trends (not relative trends) would be easier to pick out.  These plots are pretty cool in every single one, there is a marked increase in UFO sightings in July.  My guess is that is due to fireworks on July 4th.  Another possible contributing factor would be that because people are looking up at the sky for fireworks, they are more likely to see a UFO simply because they are looking up!  There also are a few instances where there is a spike in January as well.  This is particularly evident in the 2007 plot.  This may also be due to the firework effect.  Many places have a firework displays on New Years Eve.  Finally, there also seems to be a summertime upward trend.  I attribute this to warmer weather and people being outside more.  If they are outside, they have a much better chance of looking up and seeing something.  
+
+If my firework effect is indeed true, we should expect to see a spike on the 4th day of the month.  Let's generate those plots and see what we get.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=7, fig.height=5}
+subsetUS <- na.omit(subsetUS)
+subsetUS %>% 
+    group_by(day, hour) %>% 
+    summarize(cts = n()) %>% 
+    ggplot(aes(hour, cts, group = day)) +
+    geom_line() + ylab("Number of Sightings") +
+    facet_wrap(~ day) +
+    labs(title = "What Time and Day of the Month do most UFO Sightings Occur?") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+If you look at the 1st and the 4th, there are definite spikes in sightings on these days.  I think we have proven the firework effect.  Interestingly, however, there is a similar strong spike on the 15th of the month.  I have no idea what could account for that.  Not surprising, is the fact that most of the sightings are coming after 8:00 pm.  Let's do a little probability estimation.  Let's determine the likelihood of seeing a UFO at 12:00 noon and then the likelihood of seeing one at 9:00 pm.
+
+First the likelihood at noon:
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=9, fig.height=8}
+subsetUS %>% 
+    count(hour) %>% 
+    mutate(freq = n/sum(n)) %>% 
+    slice(11:13)
+subsetUS %>%
+    count(hour)%>%
+    mutate(freq = n/sum(n),
+           cum_prob = cumsum(freq))%>%
+    ggplot(aes(hour, cum_prob))+
+    geom_area(alpha = .5)+
+    geom_vline(xintercept = 12, color='black')+
+    geom_hline(yintercept = 0.279, color='blue')+
+    geom_hline(yintercept = 0.018, color='red') +
+    labs(title="Estimated Cumulative Probability of a UFO Sighting by Hour in the Day") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    annotate("text", x = 5, y = 0.9, label = "Only about a 1.8% of all sightings\n occur between noon and 1:00 pm") +
+    annotate("text", x = 5, y = 0.7, label = "Cumulatively, only about a 28% of all sightings\n occur between midnight and noon")
+```  
+
+This tells us that only 1.8% of all sightings occur between 12:00 and 1:00 pm.  The cumulative probability plot shows us that you have a much better chance of seeing a UFO later on in the day.  
+
+What about at 9:00 pm?  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+subsetUS %>% 
+    count(hour) %>% 
+    mutate(freq = n/sum(n)) %>% 
+    slice(21:23)
+```
+
+Your chances of seeing a UFO between 9:00 and 10:00 pm increase nearly an order of magnitude to 14.5%.  This of course makes perfect sense since most UFOs are described as some kind of "light".  A fact we will explore next.
+
+So what is the most common shape that people see when they see a UFO?  I used a filter on the shape column and came up with the following plot:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+filter(shape_counts, n > 100) %>% 
+    mutate(x = factor(location)) %>% 
+    ggplot(aes(x=reorder(location, -n), y=n)) +
+    geom_bar(stat = "identity") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    xlab("UFO Shape") + ylab("Number of Sightings") + ggtitle("Most Common UFO Shape Descriptions") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+Since "light" is by far the most common shape description, it is no wonder that most sightings happen at night.
+
+One last thing with UFO shapes.  We already know that light is the most common shape and it appears mostly at night.  I wonder if there are any other correlations between the shape of a UFO and the time of day it is observed.  Let's find out:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+shapes_day <- subsetUS %>% 
+    group_by(hour = hour(datetime), shape) %>% 
+    summarize(count = n())
+ggplot(shapes_day, aes(x = hour, y = shape, size = count)) +
+    geom_point() +
+    xlab("Hour in the Day") + ylab("Shape") + ggtitle("UFO Shape Descriptions as a function of Hour in the Day") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+We can clearly see the rise and fall of light-shaped UFOs as a function of hour in the day.  What we also notice is that a similar cycle is observed for triangle, sphere, fireball, disc and circle.  Both "unknown" and "other" follow that pattern as well, but since we don't know what those terms mean, it doesn't really impact our analysis.  We can also see that disc, circle, and sphere appear to be the most common shapes seen during the day.  
+
+The final part of this analysis is to look at the data on a map to help pick out centroids of sighting activities.  Here is a map of all the U.S. sightings.  I decided to exclude Hawaii and Alaska from the analysis and just focused on the contiguous United States.  Also, I had hoped to utilize Google Maps for this but they now require you to buy a subscription in order to use their mapping API.  Therefore, I had to go for the free maps and they aren't very good, but the general idea is still evident.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+subsetUS$latitude <- as.numeric(as.character(subsetUS$latitude))
+usa <- map_data("usa")
+usaOutline <- ggplot() + 
+    geom_polygon(data = usa, aes(x=long, y = lat, group = group), fill = NA, color = "red") + 
+    coord_fixed(1.3)
+subsetContUS <- subset(subsetUS, state != "ak" & state != "hi" & latitude != "0" & longitude != "0")
+usaOutline + geom_point(data = subsetContUS, aes(x = longitude, y = latitude), color = "red", size = 1) +
+    labs(title="UFO Sighting Locations within the U.S.") + theme(plot.title = element_text(hjust = 0.5))
+```  
+
+While this plot is interesting, it doesn't really help illustrate where centroids of UFO sightings are located.  Ultimately, I want to be able to perform a clustering analysis and when considered as a whole, the U.S. has just too much data (I know this because I tried a cluster analysis already).  Therefore, what I decided to do was to just look at a specific region of the United States.  I chose the Mountain States Region (because that is where I live) which consists of the following states: Colorado, Arizona, Utah, Nevada, New Mexico, Idaho, Montana, and Wyoming.
+
+My initial k-value guesses were: 3, 5, 10, and 15.  These are shown below:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=9, fig.height=8}
+subsetMountain <- read.csv("~/School/Classes/DSC 520/Final Project/Final Project/subsetMountain.csv", stringsAsFactors=FALSE)
+
+clusterMountain <- subsetMountain %>% 
+    select(latitude, longitude)
+
+set.seed(456)
+
+cluster3Mt <- kmeans(x=clusterMountain, centers = 3)
+cluster5Mt <- kmeans(x=clusterMountain, centers = 5)
+cluster10Mt <- kmeans(x=clusterMountain, centers = 10)
+cluster15Mt <- kmeans(x=clusterMountain, centers = 15)
+
+p3Mt <- fviz_cluster(cluster3Mt, geom = "point", data = clusterMountain) + ggtitle("k=3 Cluster Results") + coord_flip()
+p5Mt <- fviz_cluster(cluster5Mt, geom = "point", data = clusterMountain) + ggtitle("k=5 Cluster Results") + coord_flip()
+p10Mt <- fviz_cluster(cluster10Mt, geom = "point", data = clusterMountain) + ggtitle("k=10 Cluster Results") + coord_flip()
+p15Mt <- fviz_cluster(cluster15Mt, geom = "point", data = clusterMountain) + ggtitle("k=15 Cluster Results") + coord_flip()
+
+grid.arrange(p3Mt, p5Mt, p10Mt, p15Mt, nrow = 2)
+```  
+
+It looks like $k=3$ might be too few of clusters, while $k=15$ is clearly too many.  In order to determine the correct k value, I will use the within-cluster sum of squares (wss) method.  Determining the "elbow" point of a wss curve can be somewhat of a judgement call, so I will also provide the Silhouette Method plot.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment="", fig.width=7, fig.height=3}
+wssMt <- (nrow(clusterMountain)-1)*sum(apply(clusterMountain,2,var))
+nclusters = 15
+for(i in 2: nclusters){
+    wssMt[i]<-sum(kmeans(clusterMountain, centers = i, nstart = 25)$withinss)
+    
+}
+scree_dataMt <- data.frame(wss = wssMt, clusters = 1:nclusters)
+
+#Plot out scree data to find elbow
+clstPlot1 <- ggplot(data = scree_dataMt) + 
+    geom_line(aes(x = clusters, y = wss)) +
+    geom_point(aes(x = clusters, y = wss), size = 3) +
+    scale_x_continuous(breaks = 1:nclusters) +
+    theme_classic()
+
+clstPlot2 <- fviz_nbclust(clusterMountain, kmeans,
+             method = "silhouette")
+
+grid.arrange(clstPlot1, clstPlot2, nrow = 1)
+```  
+
+It looks like the "elbow" for the wss plot is at $k=4$, while the Silhouette Method shows an optimal value of $k=6$.  Therefore, I will split the difference and go with a $k=5$.  This works out well since I already picked $k=5$ as one of my initial guesses.  Now that we have a proper k value, let's take a closer look at the $k=5$ plot:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, comment=""}
+p5Mt + coord_flip() + scale_fill_discrete(name="State", labels = c("1: NV", "2: AZ", "3: UT", "4: CO, NM, WY", "5: ID, MT")) +
+    theme(plot.title = element_text(hjust = 0.5))
+```  
+
+I added the custom State legend to give the reader some geographical context as to where these clusters are actually located.  There is certainly some overlapping state boundaries, but by and large, this is a fairly accurate depiction.  
+
+There are a few notable items from this plot.  Let's look at each cluster separately:
+
+* Cluster 1: There is a grouping towards the bottom-right that corresponds to the Las Vegas area.  I am surprised that there aren't more sightings in this area since Nellis Air Force Base is located within this cluster.  One of my hypotheses was that UFO sightings are more frequent near military installations.  As far as Nellis is concerned, this doesn't seem to be the case.  Additionally,  Area 51 is located northeast of Las Vegas and therefore I would have expected a large centroid in this region.  There is indeed a grouping in the upper left corner, but not as large as I would have expected if Area 51 is indeed the alien "hotspot" it is purported to be. 
+* Cluster 2: There is a significant grouping in the middle that corresponds to the Phoenix metropolitan area.  Luke Air Force Base is in this region and could be a contributing factor to the large number of sightings.  Phoenix itself, however, is a large city and so attributing the amount of sightings to just the military base is not appropriate.  
+* Cluster 3: The centroid of this cluster is in the Salt Lake City area.  Hill Air Force Base and Dugway Proving Ground are in that vicinity as well and could lead to the amount of sightings.  Dugway has long been recognized as the "Utah Area 51" and should significantly contribute to the Utah UFO sightings.  There are indeed reported sightings in the Dugway area, but I work there and I haven't ever seen anything.  The amount of sightings within the Utah cluster cannot be contributed solely to military base location.  
+* Cluster 4: This cluster doesn't appear to have a particular "hotspot" of activity.  The distribution is fairly uniform throughout the cluster.  There is not a significant military presence in either Idaho or Montana.  So the reported sightings in this cluster are not due to military activity.  
+* Cluster 5: This is by far the largest cluster and there are two distinct centroids.  One for the Denver area and the other for the Albuquerque area.  Denver does not have a military base, but there is a large one just west in Colorado Springs.  Albuquerque is also home to Kirtland Air Force Base.  Again, just because there are military bases in these locations, it does not necessarily correlate to an increased number of UFO sightings.  The sightings could just be due to the increased number of people that live in those areas.  
+
+**Implications**  
+In order to understand the implications of this study, it is best to revisit the questions I wanted to answer:
+
+1. Are there more UFO sightings in the United States than in other countries?
+    * Yes, the U.S. has significantly more reported UFO sightings than the rest of the world.  One possible reason for this is that the National UFO Reporting Center (NUFORC) is located in the U.S.  Therefore, it is conceivable that mostly American people would be aware that they could report a UFO sighting.  Since this is the case, the majority of the analysis for this report was considering only U.S. data.  
+2. Are the number of UFO sightings in the U.S. increasing?  
+    * Yes, but there is a caveat.  Since 1906 sightings were regularly trending upwards.  Near 2014, however, there was a dramatic drop in reported sightings.  It was discovered that this was due to an incomplete data collection for the 2014 year.  Therefore, the years were adjusted to a range from 1989-2013 and a linear model was fit to the data.  The resulting model fit the data very well ($R^2 = 0.93$) and allowed us to make predictions for years 2014-2019.    
+3. What areas of the country/world are hotspots for UFO sightings?  
+    * As we saw earlier, there are more UFO sightings in the U.S. than anywhere else in the world.  The most likely state to see a UFO is California.  The most likely city for a sighting is Seattle, WA.  Outside of the U.S., the most likely country for a UFO sighting is Canada.  UFO sightings are primarily a North America phenomenon.  
+4. Do sightings trend with the seasons, or holidays?  
+    * We were able to observe what I am calling the firework effect, which is an increase in UFO sightings on New Years Eve and July 4th.  Either people often mistake fireworks for UFOs, or there are more reportings simply because more people are looking up at the sky on these days.  There is also a increasing trend of sightings during the summer months.  I attribute this to more people being outside during these months which increases their likelihood of actually seeing a UFO.    
+5. Are there any discernible time of day trends in UFO sightings?  
+    * We found that most UFO sightings (14.5%) occur between about 9:00 and 10:00 pm on any given day.  This drops dramatically to a low of 1.8% around noon on any given day.  So if you want to increase you chances of seeing a UFO, go outside in the summer between 9:00 and 10:00 pm.  
+6. What are the most common UFO descriptions?  
+    * We discovered that light was the most commonly used description of UFO shape and that this shape was seen primarily during the nighttime hours.  The next most common shape was triangle.  Similarly, this was also observed primarily at night.  
+    
+**Limitations**  
+The primary limitation I discovered during this analysis was time.  As I worked through the data, I kept coming up with interesting things that I wanted to investigate.  I simply don't have enough time to answer every possible question.  I had to eventually draw the proverbial line-in-the-sand and say, "I can only focus on my initially proposed questions."  But I guess that is the point of any data analysis project.  You can't answer everything.  A proper data analysis should consist of a back-and-forth between the analyst and his audience.  I would present the data as I just did in this report, and then someone would suggest that I look at some other aspect.  I would then go back and continue with a different analysis.
+
+Another limitation I discovered is that I was not able to base the number of observations on state populations.  I just didn't have access to those data.  This was a limitation because California was listed as the state with the most UFO sightings, but California also has the largest population of any state.  If I could correct the sightings based on population, I would get a better idea of where sighting hotspots actually occurred.  
+
+**Concluding Remarks**  
+This was a lot of fun!  The UFO data set was actually the third one I worked on.  I had originally started with the Titanic data and then decided to look at the Salt Lake City crime data simply because it seemed more applicable to me personally.  I only changed to the UFO data because that is what most of my classmates said I should work on.  Now I didn't have to take their advice, but I am glad I did.
+
+
+
+
+
+
