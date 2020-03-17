@@ -34,7 +34,7 @@ library(factoextra)
 * Linear regression modeling  
 
 ## Model Deployment  
-I was able to develop a model that allowed for predictions beyond the year 2014.  The R^2 value for this model was 0.93, which indicates a very good fit to the data.  The model was able to make the following predictions:  
+I was able to develop a model that allowed for predictions beyond the year 2014.  The <img src="https://latex.codecogs.com/svg.latex?\Large$space;R^2" /> value for this model was 0.93, which indicates a very good fit to the data.  The model was able to make the following predictions:  
 
 | Year | Predicted Number of UFO Sightings |  
 | --- | :---: |  
