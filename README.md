@@ -29,8 +29,8 @@ library(factoextra)
 ## Analysis Methods Used  
 * Data cleaning  
 * Exploratory Data Analysis (EDA)  
-* Correlation anlaysis  
-* Geographical anlaysis 
+* Correlation analysis  
+* Geographical analysis 
 * Linear regression modeling  
 
 ## Model Deployment  
