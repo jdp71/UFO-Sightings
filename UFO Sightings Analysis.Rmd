@@ -1,10 +1,10 @@
 ---
-title: "Week 10 Final Project"
+title: ""
 output: word_document
 ---
 
-**Assignment: 10.1 Final Project**  
-**Name:  Peterson, Jeff**  
+**UFO Project**  
+**Name:**  
 **Date:  `r format(Sys.Date(), "%Y-%B-%d")`**  
 ---
 
